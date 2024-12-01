@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Survey</title>
+</head>
+<body>
+    <h1>Survey</h1>
+    <form id="surveyForm">
+        <!-- Question 1 -->
+        <p>Will you respect the developers of the game?</p>
+        <input type="radio" name="respect" value="No" required> No<br>
+        <input type="radio" name="respect" value="Yes"> Yes<br>
+        <input type="radio" name="respect" value="Maybe"> Maybe<br>
+        <input type="radio" name="respect" value="If they respect me"> If they respect me<br>
+
+        <!-- Question 2 -->
+        <p>Will you wear gear in the game?</p>
+        <input type="radio" name="wearGear" value="Yes" required> Yes<br>
+        <input type="radio" name="wearGear" value="No"> No<br>
+        <input type="radio" name="wearGear" value="Maybe"> Maybe<br>
+        <input type="radio" name="wearGear" value="If it is free"> If it is free<br>
+
+        <!-- Question 3 -->
+        <p>What is your Roblox username?</p>
+        <input type="text" id="robloxUsername" placeholder="Username here" required><br>
+        <button type="button" id="checkRoblox">Check Roblox User</button>
+        <p id="robloxStatus"></p>
+
+        <!-- Question 4 -->
+        <p>Will you join the group and Discord server?</p>
+        <input type="radio" name="joinGroup" value="Yes" required> Yes<br>
+        <input type="radio" name="joinGroup" value="No"> No<br>
+        <input type="radio" name="joinGroup" value="If I have Discord"> If I have Discord<br>
+        <input type="radio" name="joinGroup" value="Later"> Later<br>
+        <p>Discord server: <a href="https://discord.gg/Yh5DHFXV" target="_blank">Join Here</a></p>
+
+        <!-- Submit -->
+        <p>Do you wish to submit this?</p>
+        <button type="submit">Yes</button>
+        <button type="button" id="noSubmit">No</button>
+    </form>
+
+    <!-- Discord username -->
+    <div id="discordSection" style="display:none;">
+        <p>What is your Discord username?</p>
+        <input type="text" id="discordUsername" placeholder="Discord Username" required><br>
+        <button id="submitDiscord">Submit Discord</button>
+    </div>
+
+    <script>
+        const webhookUrl = "<WEBHOOK_URL>";
+        const robloxStatus = document.getElementById("robloxStatus");
+        const discordSection = document.getElementById("discordSection");
+
+        document.getElementById("checkRoblox").addEventListener("click", async () => {
+            const username = document.getElementById("robloxUsername").value;
+            if (!username) return alert("Enter a username!");
+
+            try {
+                const response = await fetch(`https://users.roblox.com/v1/users/search?keyword=${username}&limit=1`);
+                const data = await response.json();
+                if (data.data && data.data.length > 0 && data.data[0].name === username) {
+                    const userId = data.data[0].id;
+                    const descResponse = await fetch(`https://users.roblox.com/v1/users/${userId}`);
+                    const descData = await descResponse.json();
+                    if (descData.description.includes("war")) {
+                        robloxStatus.textContent = "User exists and description contains 'war'.";
+                    } else {
+                        robloxStatus.textContent = "User exists but description does not contain 'war'. Please update it.";
+                    }
+                } else {
+                    robloxStatus.textContent = "Username not found. Please try again.";
+                }
+            } catch (error) {
+                console.error(error);
+                robloxStatus.textContent = "Error checking username.";
+            }
+        });
+
+        document.getElementById("surveyForm").addEventListener("submit", async (event) => {
+            event.preventDefault();
+
+            const formData = new FormData(event.target);
+            const data = {
+                respect: formData.get("respect"),
+                wearGear: formData.get("wearGear"),
+                robloxUsername: document.getElementById("robloxUsername").value,
+                joinGroup: formData.get("joinGroup"),
+            };
+
+            fetch(webhookUrl, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ content: JSON.stringify(data) }),
+            });
+
+            discordSection.style.display = "block";
+        });
+
+        document.getElementById("submitDiscord").addEventListener("click", () => {
+            const discordUsername = document.getElementById("discordUsername").value;
+            if (!discordUsername) return alert("Enter your Discord username!");
+
+            fetch(webhookUrl, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ content: `Discord Username: ${discordUsername}` }),
+            }).then(() => {
+                alert("Survey submitted successfully!");
+            });
+        });
+    </script>
+</body>
+</html>
